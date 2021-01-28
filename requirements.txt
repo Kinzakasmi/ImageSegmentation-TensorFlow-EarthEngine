@@ -1,0 +1,13 @@
+earthengine-api
+tensorflow
+numpy
+matplotlib
+simplekml
+osgeo
+sklearn
+imblearn
+joblib
+umap
+seaborn
+pandas
+swifter
