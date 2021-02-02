@@ -11,3 +11,4 @@ umap
 seaborn
 pandas
 swifter
+dask[dataframe]

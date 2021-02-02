@@ -52,7 +52,7 @@ class Inference :
     
     def writePrediction(self,name,predictions):
         print('Writing predictions...')
-        out_image_file = 'data//predictions/tfrecords/' + name + '.TFRecord'
+        out_image_file = 'data/inference/' + name + '_pred.TFRecord'
         writer = tf.io.TFRecordWriter(out_image_file)
         # Create an example.
         example = tf.train.Example(
@@ -120,7 +120,7 @@ def palette(M):
     for i in range(3) :
         Mc[i].assign(tf.where(M==0,255*matplotlib.colors.to_rgb('lime')[i],Mc[i]))#field
         Mc[i].assign(tf.where(M==1,255*matplotlib.colors.to_rgb('darkgreen')[i],Mc[i]))#forest
-        Mc[i].assign(tf.where(M==2,255*matplotlib.colors.to_rgb('yellow')[i],Mc[i]))#urbain
+        Mc[i].assign(tf.where(M==2,[255,112,112][i],Mc[i]))#urbain
         Mc[i].assign(tf.where(M==3,255*matplotlib.colors.to_rgb('blue')[i],Mc[i]))#water/snow
         Mc[i] = tf.convert_to_tensor(Mc[i])
     return tf.stack(Mc,axis=-1).numpy().astype(np.uint8) 
@@ -144,9 +144,16 @@ def download_kml(array,name,north,south,east,west):
     image.latlonbox.south = south
     image.latlonbox.east = east
     image.latlonbox.west = west
-
+    
+    legend = kml.newscreenoverlay(name='Legend')
+    legend.icon.href = 'legend.PNG'
+    legend.overlayxy = simplekml.OverlayXY(x=0,y=1,xunits="fraction",yunits="fraction")
+    legend.screenxy = simplekml.ScreenXY(x=0, y=1,xunits="fraction",yunits="fraction")
+    legend.size = simplekml.Size(x=100, y=100, xunits="pixels", yunits="pixels")
+                                 
     kml.save('data/predictions/kml/'+name+'.kml')
-    print('Kml saved at "data/predictions/kml"')
+    print()
+    print('!!! KML SAVED AT "data/predictions/kml" !!!')
 
 # -------- FOR CNN MODELS : YOU HAVE TO ADD YOUR PREDICTIONS TO THE EDITOR, EXPORT IMAGE TO TIF THEN CONVERT IT TO KML --------#
 def download_tif(assetId):

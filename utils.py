@@ -19,7 +19,7 @@ def create_folders():
         path = os.path.join(parent_dir, folder) 
         if not os.path.exists(path):
             os.makedirs(path)
-    for folder in ['colored_pipes','kml','tfrecords']:
+    for folder in ['colored_pipes','kml']:
         parent_dir = os.path.join(os.getcwd(), 'data','predictions') 
         path = os.path.join(parent_dir, folder) 
         if not os.path.exists(path):
@@ -95,9 +95,9 @@ def clean_predictions(name):
     df.to_csv(file, index=False)
     print('Predictions are updated')
 
-def predict_pipes_from_csv(filename,model_name,bands,start_date,end_date):
+def predict_pipes_from_csv(filename,model_name,bands,start_date,end_date,multi_process=True):
     import joblib
-    #import swifter
+    import swifter
     def predict(row):
         lon1, lat1, lon2, lat2 = (row['lon1'], row['lat1'], row['lon2'], row['lat2'])
         line = ee.Geometry.LineString((lon1, lat1, lon2, lat2))
@@ -116,10 +116,13 @@ def predict_pipes_from_csv(filename,model_name,bands,start_date,end_date):
     sentinel = get_sentinel1(start_date,end_date)
     image = ee.Image.cat([landsat,sentinel]).reproject(crs='EPSG:3857',scale=30).select(bands)
     model = joblib.load('models/'+model_name+'.joblib')
-
-    #df['landcover'] = df.swifter.allow_dask_on_strings(enable=True).apply (lambda row: predict(row), axis=1) 
-    df['landcover'] = df.apply (lambda row: predict(row), axis=1)
+    
+    if multi_process :
+        df['landcover'] = df.swifter.allow_dask_on_strings(enable=True).apply (lambda row: predict(row), axis=1) 
+    else :
+        df['landcover'] = df.apply (lambda row: predict(row), axis=1)
     df.to_csv(filename,index=False)
+    print("!! CSV WITH PREDICTIONS SAVED !!")
 
 def get_statistics(filename):
     def deg2rad(deg) :
@@ -144,6 +147,7 @@ def get_statistics(filename):
     stats.rename(columns={'length':'proportion'},inplace=True)
     name = os.path.splitext(os.path.basename(filename))[0].split('_classification')[0]
     stats.to_csv('data/predictions/'+name+'_statistics.csv', index=False)
+    print('!! STATISTICS SAVED AT "data/predictions" !!')
     
 def color_pipes(filename) :
     import simplekml
@@ -153,7 +157,6 @@ def color_pipes(filename) :
     ds_test = pd.read_csv(filename)
     lines = (ds_test['Name'], ds_test['lon1'], ds_test['lat1'], ds_test['lon2'], ds_test['lat2'], ds_test['landcover'])
     kml = simplekml.Kml()
-    i = ds_test.shape[0]
     ids, lons1, lats1, lons2, lats2, classes = lines
 
     for id, lon1, lat1, lon2, lat2, classe in zip (ids, lons1, lats1, lons2, lats2, classes):
@@ -163,11 +166,17 @@ def color_pipes(filename) :
         elif classe == 1:
             r,g,b = np.multiply(255,matplotlib.colors.to_rgb('darkgreen')).astype(int)
         elif classe == 2:
-            r,g,b = np.multiply(255,matplotlib.colors.to_rgb('yellow')).astype(int)
+            r,g,b = [225,112,112].astype(int)
         else:
             r,g,b = np.multiply(255,matplotlib.colors.to_rgb('blue')).astype(int)
         line.style.linestyle.color = simplekml.Color.rgb(r,g,b)
-        i = i-1
-        
+
+    legend = kml.newscreenoverlay(name='Legend')
+    legend.icon.href = 'legend.PNG'
+    legend.overlayxy = simplekml.OverlayXY(x=0,y=1,xunits="fraction",yunits="fraction")
+    legend.screenxy = simplekml.ScreenXY(x=0, y=1,xunits="fraction",yunits="fraction")
+    legend.size = simplekml.Size(x=100, y=100, xunits="pixels", yunits="pixels")
+
     name = os.path.splitext(os.path.basename(filename))[0].split('_classification')[0]
     kml.save('data/predictions/colored_pipes/'+name+'_colored.kml') 
+    print ('!! KML SAVED AT "data/predictions/colored_pipes !!"')
