@@ -11,22 +11,23 @@ def create_folders():
     '''Function that creates all the folder you'll need for the whole project'''
     for folder in ['results','models']:
         parent_dir = os.getcwd()
-        path = os.path.join(parent_dir, folder) 
+        path       = os.path.join(parent_dir, folder) 
         if not os.path.exists(path):
             os.makedirs(path)
     for folder in ['train','eval','inference']:
         parent_dir = os.path.join(os.getcwd(), 'data') 
-        path = os.path.join(parent_dir, folder) 
+        path       = os.path.join(parent_dir, folder) 
         if not os.path.exists(path):
             os.makedirs(path)
     for folder in ['colored_pipes','kml']:
         parent_dir = os.path.join(os.getcwd(), 'data','predictions') 
-        path = os.path.join(parent_dir, folder) 
+        path       = os.path.join(parent_dir, folder) 
         if not os.path.exists(path):
             os.makedirs(path)
 
 def predict_pipes(network_name,image_name):
-    '''Function that assigns a class to each pipe and exports a csv file with columns that includes the name of the pipe, its geometry and its class.
+    '''Function that assigns a class to each pipe and exports a csv file with columns that includes the name of the pipe, 
+    its geometry and its class.
     This function requires you added your network and predictions to Earth Engine Editor's Assets. '''
 
     file = 'data/predictions/'+image_name+'_classification.csv'
@@ -43,10 +44,10 @@ def predict_pipes(network_name,image_name):
         #Import the network from Assets
         table = ee.FeatureCollection('users/leakm/'+network_name).filterBounds(image.geometry().bounds())
         table = table.map(func)
-        task = ee.batch.Export.table.toDrive(
-            collection = table, 
-            description= image_name+'_classification',
-            folder     = 'predictions'
+        task  = ee.batch.Export.table.toDrive(
+            collection  = table, 
+            description = image_name+'_classification',
+            folder      = 'predictions'
         )
         task.start()
         
@@ -61,7 +62,8 @@ def predict_pipes(network_name,image_name):
             print('Please download the file from drive (directory data/predictions) if you work on your local computer')
     
 def clean_predictions(name):
-    '''Function that parses the geometry of the pipe from geo-json format to lon1,lat1,lon2,lat2 and gets rid of unnecessary columns from the csv'''
+    '''Function that parses the geometry of the pipe from geo-json format to lon1,lat1,lon2,lat2 and gets rid of 
+    unnecessary columns from the csv'''
     import json
     file = 'data/predictions/'+name+'_classification.csv'
     df = pd.read_csv(file)
@@ -100,29 +102,27 @@ def predict_pipes_from_csv(filename,model_name,bands,start_date,end_date,multi_p
     import swifter
     def predict(row):
         lon1, lat1, lon2, lat2 = (row['lon1'], row['lat1'], row['lon2'], row['lat2'])
-        line = ee.Geometry.LineString((lon1, lat1, lon2, lat2))
-        array_image = image.sampleRectangle(region=line.bounds())
-        array_image = [np.array(array_image.get(i).getInfo()) for i in bands]
-        array_image = np.dstack(array_image)
-        array_image = feature_process(array_image)
+        line         = ee.Geometry.LineString((lon1, lat1, lon2, lat2))
+        #Just something useless i need for the function "stratifiedSample"
+        classes      = ee.Image().byte().paint(ee.Feature(line.bounds()), 0).rename("class")
+        array_image  = image.addBands(classes)
+        #Sample the image into 10 points
+        array_image  = array_image.stratifiedSample(numPoints=10, classBand="class",region=line.bounds(), scale=30)
+        if array_image.size().getInfo() > 0 :
+            array_image  = array_image.toList(array_image.size()).map(lambda element: ee.Feature(element).toArray(image.bandNames()))
+            array_image  = np.array(array_image.getInfo())
+        #Sometimes the pipe is a point, so we can't use the function stratifiedSample
+        else :
+            array_image  = image.sampleRectangle(region=line.bounds())
+            array_image  = [np.array(array_image.get(i).getInfo()) for i in bands]
+            array_image  = np.dstack(array_image)
+        #Apply processing
+        array_image  = feature_process(array_image)
         num_features = array_image.shape[-1]
-        array_image = tf.reshape(array_image,[-1,num_features])
-        predictions = model.predict(array_image)
-        counts = np.bincount(predictions)
+        array_image  = tf.reshape(array_image,[-1,num_features])
+        predictions  = model.predict(array_image)
+        counts       = np.bincount(predictions)
         return np.argmax(counts)
-    
-    df = pd.read_csv(filename)
-    landsat = get_landsat8(start_date,end_date)
-    sentinel = get_sentinel1(start_date,end_date)
-    image = ee.Image.cat([landsat,sentinel]).reproject(crs='EPSG:3857',scale=30).select(bands)
-    model = joblib.load('models/'+model_name+'.joblib')
-    
-    if multi_process :
-        df['landcover'] = df.swifter.allow_dask_on_strings(enable=True).apply (lambda row: predict(row), axis=1) 
-    else :
-        df['landcover'] = df.apply (lambda row: predict(row), axis=1)
-    df.to_csv(filename,index=False)
-    print("!! CSV WITH PREDICTIONS SAVED !!")
 
 def get_statistics(filename):
     def deg2rad(deg) :
