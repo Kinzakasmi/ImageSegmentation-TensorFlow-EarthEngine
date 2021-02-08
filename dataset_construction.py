@@ -205,7 +205,7 @@ class TFDatasetConstruction():
                 print('Please download all files starting with','"'+name+'"','from drive (directory data/inference) if you work on your local computer')
             os.chdir('..')
     
-    def test_dataset_construction(self,start_date,end_date,filename,patch_size=None,network_name=None,point=None,radius=None,rectangle=None):
+    def test_dataset_construction(self,start_date,end_date,filename,patch_size=None,point=None,radius=None,rectangle=None):
         if point and radius and rectangle and network_name : 
             raise ValueError("Please precise either 'network_name', 'point' and 'length', or 'rectangle'")
 
@@ -214,11 +214,8 @@ class TFDatasetConstruction():
             region = point.bounds()
         elif rectangle :
             region = ee.Geometry.Rectangle(rectangle)
-        elif network_name : 
-            shape  = ee.FeatureCollection('users/leakm/'+network_name)
-            region = shape.geometry().bounds()
         else :
-            raise ValueError("Please precise either 'network_name', 'point' and 'length', or 'rectangle'")
+            raise ValueError("Please precise either 'point' and 'length', or 'rectangle'")
         corners    = region.coordinates().getInfo()[0]
 
         if not(os.path.isfile('data/inference/'+filename+'-mixer.json')):

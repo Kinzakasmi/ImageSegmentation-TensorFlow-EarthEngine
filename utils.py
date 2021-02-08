@@ -107,7 +107,7 @@ def predict_pipes_from_csv(filename,model_name,bands,start_date,end_date,multi_p
         classes      = ee.Image().byte().paint(ee.Feature(line.bounds()), 0).rename("class")
         array_image  = image.addBands(classes)
         #Sample the image into 10 points
-        array_image  = array_image.stratifiedSample(numPoints=10, classBand="class",region=line.bounds(), scale=30)
+        array_image  = array_image.stratifiedSample(numPoints=5, classBand="class",region=line.bounds(), scale=30)
         if array_image.size().getInfo() > 0 :
             array_image  = array_image.toList(array_image.size()).map(lambda element: ee.Feature(element).toArray(image.bandNames()))
             array_image  = np.array(array_image.getInfo())
@@ -120,9 +120,21 @@ def predict_pipes_from_csv(filename,model_name,bands,start_date,end_date,multi_p
         array_image  = feature_process(array_image)
         num_features = array_image.shape[-1]
         array_image  = tf.reshape(array_image,[-1,num_features])
+        #Predicting 
         predictions  = model.predict(array_image)
+        #Choosing the most commun class
         counts       = np.bincount(predictions)
         return np.argmax(counts)
+    df = pd.read_csv(filename)
+    landsat = get_landsat8(start_date,end_date)
+    sentinel = get_sentinel1(start_date,end_date)
+    image = ee.Image.cat([landsat,sentinel]).reproject(crs='EPSG:3857',scale=30).select(bands)
+    model = joblib.load('models/'+model_name+'.joblib')
+
+    #df['landcover'] = df.swifter.allow_dask_on_strings(enable=True).apply (lambda row: predict(row), axis=1) 
+    df['landcover'] = df.apply (lambda row: predict(row), axis=1)
+    df.to_csv(filename,index=False)
+    print("!! CSV WITH PREDICTIONS SAVED !!")
 
 def get_statistics(filename):
     def deg2rad(deg) :
