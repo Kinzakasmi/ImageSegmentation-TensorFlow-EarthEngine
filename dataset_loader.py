@@ -16,19 +16,14 @@ def feature_process(features):
     NIR   = features[...,4]
     SWIR1 = features[...,5]
     SWIR2 = features[...,6]
-    TIR1  = features[...,7]
 
     ndvi  = tf.math.divide_no_nan(NIR-Red,NIR+Red) #(NIR/Red)
     mndwi = tf.math.divide_no_nan(Green-SWIR1,Green+SWIR1) #(Green/SWIR1)
     awei  = Blue + 2.5*Green - 1.5*(NIR+SWIR1) - 0.25*SWIR2
-    ui    = tf.math.divide_no_nan(SWIR2-NIR,SWIR2+NIR) #(SWIR2/NIR)
-    c     = (Green+NIR+SWIR1)/3
-    ndisi = tf.math.divide_no_nan(TIR1-c,TIR1+c) #TIR1/((Green+NIR+SWIR1)/3)
-    del c
     vgNIR = tf.math.divide_no_nan(Green-NIR,Green+NIR) #Green/NIR 
-    dbi   = tf.math.divide_no_nan(Blue-TIR1,Blue+TIR1) #(Blue/TIR)
+    ui    = tf.math.divide_no_nan(SWIR2-NIR,SWIR2+NIR) #(SWIR2/NIR)
 
-    new_features = tf.stack([ndvi,mndwi,awei,ui,ndisi,vgNIR,dbi],axis=-1)
+    new_features = tf.stack([ndvi,mndwi,awei,vgNIR,ui],axis=-1)
     features = tf.concat([features,new_features],axis=-1)
     return features
     

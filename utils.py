@@ -30,7 +30,7 @@ def predict_pipes(network_name,image_name):
     its geometry and its class.
     This function requires you added your network and predictions to Earth Engine Editor's Assets. '''
 
-    file = 'data/predictions/'+image_name+'_classification.csv'
+    file = 'data/predictions/'+network_name+'_classification.csv'
     if not os.path.isfile(file):
         #Import the prediction image from Assets
         image = ee.Image('users/leakm/'+image_name+'_pred')
@@ -46,7 +46,7 @@ def predict_pipes(network_name,image_name):
         table = table.map(func)
         task  = ee.batch.Export.table.toDrive(
             collection  = table, 
-            description = image_name+'_classification',
+            description = network_name+'_classification',
             folder      = 'predictions'
         )
         task.start()
@@ -70,6 +70,13 @@ def clean_predictions(name):
 
     # Keep only the interesting columns
     df = df[['system:index','Name','landcover','.geo','length']]
+
+    # Some kml don't have Id_arcs so we use system:index
+    if df['Name'].isnull().values.any() :
+        df['Name'] = df['system:index']
+    df.drop(columns=['system:index'],inplace=True)
+
+
     df['.geo'] = df['.geo'].astype(str)
 
     # Parse landcover as int
@@ -87,13 +94,9 @@ def clean_predictions(name):
     df['lat1'] = df['.geo'].apply(lambda x: x[0][1])
     df['lon2'] = df['.geo'].apply(lambda x: x[1][0])
     df['lat2'] = df['.geo'].apply(lambda x: x[1][1])
-    df.drop(columns=['.geo'],inplace=True)
 
-    # We don't have Sieccao's Id_arcs so we use system:index after remodeling them
-    if 'sieccao' in file :
-        df['Name'] = df['system:index']
+    df.drop(columns=['.geo'],inplace=True)    
     
-    df.drop(columns=['system:index'],inplace=True)
     df.to_csv(file, index=False)
     print('Predictions are updated')
 
@@ -178,7 +181,7 @@ def color_pipes(filename) :
         elif classe == 1:
             r,g,b = np.multiply(255,matplotlib.colors.to_rgb('darkgreen')).astype(int)
         elif classe == 2:
-            r,g,b = [225,112,112].astype(int)
+            r,g,b = [225,112,112]
         else:
             r,g,b = np.multiply(255,matplotlib.colors.to_rgb('blue')).astype(int)
         line.style.linestyle.color = simplekml.Color.rgb(r,g,b)
