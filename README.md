@@ -1,4 +1,4 @@
-# **landcover classification** #
+# **Landcover classification using TensorFlow and Google Earth Engine ** #
 Welcome to the landcover classification project.
 This projects aims at : 
 1. Creating a kml file of a mask. This mask is an image where every color represents a certain class :
