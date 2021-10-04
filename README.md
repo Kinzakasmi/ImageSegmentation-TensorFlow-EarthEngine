@@ -6,7 +6,7 @@ This projects aims at :
 	- Dark green for forests
 	- Magenta for urban areas
 	- Blue for water
-2. Assigning a class to each pipe of a network according to its location.
+2. Assigning a class to each pipe of a network (could be anaything, like a water network) according to its location (the result is a CSV file).
 
 There are two jupyter-notebook tutorials that guide you through the training and prediction processes. 
 A jupyter notebook is a web-based interactive computational environment that is dynamic and easy to use. 
