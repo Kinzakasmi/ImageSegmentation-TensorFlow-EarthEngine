@@ -1,7 +1,7 @@
 # **Landcover classification using TensorFlow and Google Earth Engine** #
 Welcome to the landcover classification project.
-This projects aims at : 
-1. Creating a kml file of a mask. This mask is an image where every color represents a certain class :
+This projects aims at: 
+1. Creating a kml file of a mask. This mask is an image where every color represents a certain class:
 	- Lime green for fields
 	- Dark green for forests
 	- Magenta for urban areas
@@ -17,22 +17,22 @@ You can read the notebooks using anaconda or vs-code after installing the jupyte
 
 *If you already have a pretrained model in your file "models" and want to use it to predict some area of you network, please follow the instructions and do not execute the training section. This will be reminded in the notebook.*
 
-The `utils` folder contains scripts defining :
+The `utils` folder contains scripts defining:
 - Utility functions,
 - Learning rate schedulers,
 - Losses and metrics.
 
-The `dataset` folder contains scripts for :
-- Dataset construction : definition of a TFDatasetConstruction class,
-- Dataset loading and preprocessing : definition of a TFDatasetProcessing class and NPDatasetProcessing class.
+The `dataset` folder contains scripts for:
+- Dataset construction: definition of a TFDatasetConstruction class,
+- Dataset loading and preprocessing: definition of a TFDatasetProcessing class and NPDatasetProcessing class.
 
-The `models` folder contains the following scripts :
-- models.py : defines a ModelTrainingAndEvaluation class whose methods allow :
+The `models` folder contains the following scripts:
+- models.py: defines a ModelTrainingAndEvaluation class whose methods allow :
 	- Training and finetuning of KNN, SVM and RandomForest models,
 	- Model evaluation; score and confusion matrix calculation,
 	- PCA and UMAP dimentionaly reduction,
 	- Feature importance computing in case of RandomForest.
-- unet.py : 
+- unet.py: 
 	- Defines a DLModel class whose methods allow UNET model implementation and initialisation from a checkpoint (you could add your own model as a method),
 	- ModelEvaluation; score and confusion matrix calculation.
 
