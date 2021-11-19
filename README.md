@@ -17,6 +17,13 @@ You can read the notebooks using anaconda or vs-code after installing the jupyte
 
 *If you already have a pretrained model in your file "models" and want to use it to predict some area of you network, please follow the instructions and do not execute the training section. This will be reminded in the notebook.*
 
+The `inference.py` script defines several functions for :
+- Inference using ML models (scikit-learn),
+- Inference using DL models (TensorFlow),
+- Improvement of the prediction mask using Dense Conditional Random Field (DenseCRF),
+- Prediction mask download as a tif image,
+- Conversion of a tif mask image into a KML image.
+
 The `utils` folder contains scripts defining:
 - Utility functions,
 - Learning rate schedulers,
