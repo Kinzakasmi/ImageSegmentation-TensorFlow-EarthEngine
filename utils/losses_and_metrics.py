@@ -4,8 +4,8 @@ import os
 
 def get_class_weights(training,size,kernel_size,num_classes) :
     import json
-    if os.path.isfile('class_weights.json') :
-        with open('class_weights.json', 'r') as j:
+    if os.path.isfile('data/class_weights.json') :
+        with open('data/class_weights.json', 'r') as j:
             class_weights = json.loads(j.read())
             class_weights = {int(k) : class_weights[k] for k in class_weights}
     else :
@@ -34,7 +34,7 @@ def get_class_weights(training,size,kernel_size,num_classes) :
 
         #save class weights
         import json
-        with open("class_weights.json", "w") as a_file :
+        with open("data/class_weights.json", "w") as a_file :
             json.dump(class_weights, a_file)
         
         weights = list(class_weights.values())
